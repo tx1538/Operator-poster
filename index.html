@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>呈派号卡-运营商海报模板制作工具</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef3f8;
+      --panel: #ffffff;
+      --line: #dce5f2;
+      --text: #19233c;
+      --muted: #66728a;
+      --theme: #3169d8;
+      --theme-dark: #2549bd;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      width: min(1240px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: minmax(320px, 800px) minmax(280px, 360px);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .preview-shell,
+    .editor {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 14px 36px rgba(42, 67, 111, 0.12);
+    }
+
+    .preview-shell {
+      padding: 16px;
+    }
+
+    .canvas-wrap {
+      width: 100%;
+      overflow: auto;
+      border-radius: 6px;
+      background: #d8e4f8;
+      max-height: calc(100vh - 48px);
+    }
+
+    canvas {
+      display: block;
+      width: min(100%, 800px);
+      height: auto;
+      margin: 0 auto;
+      background: var(--theme);
+    }
+
+    .editor {
+      padding: 18px;
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+    }
+
+    .editor h1 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      line-height: 1.3;
+      font-weight: 800;
+    }
+
+    .mode-tabs,
+    .template-tabs {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .mode-tabs {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .template-tabs {
+      grid-template-columns: repeat(4, 1fr);
+      margin-bottom: 16px;
+    }
+
+    .mode-tab,
+    .template-tab {
+      min-height: 38px;
+      padding: 0 8px;
+      border: 1px solid #cbd7e7;
+      border-radius: 6px;
+      color: var(--muted);
+      background: #f7faff;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .mode-tab.is-active,
+    .template-tab.is-active {
+      color: #ffffff;
+      border-color: transparent;
+      background: linear-gradient(90deg, var(--theme-dark), var(--theme));
+    }
+
+    .fields {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid #cbd7e7;
+      border-radius: 6px;
+      outline: none;
+      font: inherit;
+      color: var(--text);
+      background: #fbfdff;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--theme);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme) 16%, transparent);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      min-height: 40px;
+      border: 0;
+      border-radius: 6px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    .primary {
+      color: #ffffff;
+      background: linear-gradient(90deg, var(--theme-dark), var(--theme));
+    }
+
+    .secondary {
+      color: var(--theme-dark);
+      background: color-mix(in srgb, var(--theme) 12%, #ffffff);
+    }
+
+    .site-footer {
+      width: min(1240px, 100%);
+      margin: -4px auto 0;
+      padding: 0 24px 24px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .site-footer a {
+      color: var(--theme-dark);
+      text-decoration: none;
+    }
+
+    .site-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        padding: 14px;
+      }
+
+      .editor {
+        position: static;
+        max-height: none;
+      }
+
+      .canvas-wrap {
+        max-height: none;
+      }
+
+      .site-footer {
+        padding: 0 14px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="preview-shell" aria-label="模板预览">
+      <div class="canvas-wrap">
+        <canvas id="poster" width="800" height="800"></canvas>
+      </div>
+    </section>
+
+    <aside class="editor" aria-label="文字编辑">
+      <h1>文字编辑</h1>
+      <div class="mode-tabs" aria-label="海报类型切换">
+        <button class="mode-tab" type="button" data-mode="hero">头图海报</button>
+        <button class="mode-tab" type="button" data-mode="detail">详情长图</button>
+      </div>
+      <div class="template-tabs" aria-label="模板切换">
+        <button class="template-tab" type="button" data-template="telecom">电信</button>
+        <button class="template-tab" type="button" data-template="broadnet">广电</button>
+        <button class="template-tab" type="button" data-template="mobile">移动</button>
+        <button class="template-tab" type="button" data-template="unicom">联通</button>
+      </div>
+
+      <div class="fields" id="fields"></div>
+
+      <div class="actions">
+        <button class="primary" id="download" type="button">保存为图片</button>
+        <button class="secondary" id="reset" type="button">恢复默认</button>
+      </div>
+    </aside>
+  </main>
+  <footer class="site-footer">
+    <a href="https://hk.haoka999.com/h5/pages/my/my">呈派号卡-运营商海报模板制作工具</a>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById("poster");
+    const ctx = canvas.getContext("2d");
+    const source = new Image();
+    const fieldsContainer = document.getElementById("fields");
+    const modeTabs = Array.from(document.querySelectorAll("[data-mode]"));
+    const templateTabs = Array.from(document.querySelectorAll("[data-template]"));
+    const downloadButton = document.getElementById("download");
+    const heroExportMaxBytes = 250 * 1000;
+    const detailExportMaxBytes = 450 * 1000;
+
+    const operators = ["telecom", "broadnet", "mobile", "unicom"];
+
+    const heroFields = [
+      ["cardName", "顶部标题"],
+      ["freeBadge", "角标"],
+      ["mainNumber", "主流量数字"],
+      ["mainUnit", "主流量单位"],
+      ["flowLine", "流量说明"],
+      ["voiceLine", "通话权益"],
+      ["ageLine", "办理年龄"],
+      ["bottomLine", "底部权益"],
+      ["price", "价格"],
+      ["priceUnit", "价格单位/小数"],
+      ["priceBadge", "价格按钮"]
+    ];
+
+    const detailFields = [
+      ["cardName", "卡名"],
+      ["rentPrice", "月租价格"],
+      ["originalPrice", "原套餐"],
+      ["flowAmount", "流量数值"],
+      ["flowDesc", "流量说明"],
+      ["callAmount", "通话数值"],
+      ["callDesc", "通话说明"],
+      ["benefitText", "优惠说明", "textarea"],
+      ["packageBefore", "原套餐介绍"],
+      ["packageAfter", "优惠后介绍"],
+      ["extraFee", "套餐外资费"],
+      ["rechargeMain", "首充优惠标题"],
+      ["rechargeSub", "首充右侧提示"],
+      ["rules", "资费规则", "textarea"],
+      ["onlineSummary", "综上所述", "textarea"],
+      ["tipsTitle", "提示标题"],
+      ["tipsBody", "提示内容", "textarea"],
+      ["tipsStars", "星标提示", "textarea"]
+    ];
+
+    const heroTemplates = {
+      telecom: {
+        label: "中国电信",
+        file: "assets/telecom-template.png",
+        theme: "#3169d8",
+        themeDark: "#2549bd",
+        colors: {
+          title: "#ffffff",
+          badge: "#ffffff",
+          mainStart: "#3651d2",
+          mainEnd: "#2f83d8",
+          mainShadow: "rgba(18, 59, 137, 0.18)",
+          flow: "#05061d",
+          voice: "#ffffff",
+          age: "#2f62d7",
+          bottom: "#ffffff",
+          price: "#2f62d7",
+          priceBadge: "#ffffff"
+        },
+        defaults: {
+          cardName: "广范卡",
+          freeBadge: "首月免费",
+          mainNumber: "185",
+          mainUnit: "GB",
+          flowLine: "155G高速通用流量+30G定向流量",
+          voiceLine: "语音通话100分钟",
+          ageLine: "办理年龄：18-60周岁",
+          bottomLine: "激活首充100元享受优惠",
+          price: "39",
+          priceUnit: "/月",
+          priceBadge: "办理即享"
+        }
+      },
+      broadnet: {
+        label: "中国广电",
+        file: "assets/broadnet-template.png",
+        theme: "#eb8100",
+        themeDark: "#d96f00",
+        colors: {
+          title: "#ffffff",
+          badge: "#ffffff",
+          mainStart: "#eb7b00",
+          mainEnd: "#ef8a00",
+          mainShadow: "rgba(21, 72, 57, 0.28)",
+          flow: "#050505",
+          voice: "#ffffff",
+          age: "#ee7f00",
+          bottom: "#f6dfb7",
+          price: "#e97900",
+          priceBadge: "#ffffff"
+        },
+        defaults: {
+          cardName: "云龙卡",
+          freeBadge: "特惠套餐",
+          mainNumber: "185",
+          mainUnit: "GB",
+          flowLine: "155G高速通用流量+30G定向流量",
+          voiceLine: "语音通话150分钟",
+          ageLine: "办理年龄：18-60周岁",
+          bottomLine: "激活首充100元享受优惠",
+          price: "39",
+          priceUnit: "/月",
+          priceBadge: "办理即享"
+        }
+      },
+      mobile: {
+        label: "中国移动",
+        file: "assets/mobile-template.png",
+        theme: "#0a7d67",
+        themeDark: "#066b58",
+        colors: {
+          title: "#ffffff",
+          badge: "#ffffff",
+          mainStart: "#0b7c67",
+          mainEnd: "#08725f",
+          mainShadow: "rgba(17, 64, 54, 0.26)",
+          flow: "#050505",
+          voice: "#ffffff",
+          age: "#0b7a65",
+          bottom: "#f5dfba",
+          price: "#08725f",
+          priceBadge: "#ffffff"
+        },
+        defaults: {
+          cardName: "伴年卡",
+          freeBadge: "特惠套餐",
+          mainNumber: "185",
+          mainUnit: "GB",
+          flowLine: "155G高速通用流量+30G定向流量",
+          voiceLine: "语音通话100分钟",
+          ageLine: "办理年龄：18-60周岁",
+          bottomLine: "激活首充100元享受优惠",
+          price: "39",
+          priceUnit: "/月",
+          priceBadge: "办理即享"
+        }
+      },
+      unicom: {
+        label: "中国联通",
+        file: "assets/unicom-template.png",
+        theme: "#b72a27",
+        themeDark: "#a92021",
+        colors: {
+          title: "#ffffff",
+          badge: "#ffffff",
+          mainStart: "#ad2024",
+          mainEnd: "#c84b38",
+          mainShadow: "rgba(93, 20, 20, 0.25)",
+          flow: "#1e0002",
+          voice: "#ffffff",
+          age: "#b12a28",
+          bottom: "#f6dfb7",
+          price: "#b12a28",
+          priceBadge: "#ffffff"
+        },
+        defaults: {
+          cardName: "西念卡",
+          freeBadge: "特惠套餐",
+          mainNumber: "185",
+          mainUnit: "GB",
+          flowLine: "155G高速通用流量+30G定向流量",
+          voiceLine: "语音通话100分钟",
+          ageLine: "办理年龄：18-60周岁",
+          bottomLine: "激活首充100元享受优惠",
+          price: "39",
+          priceUnit: "/月",
+          priceBadge: "办理即享"
+        }
+      }
+    };
+
+    const detailTemplates = {
+      telecom: {
+        label: "中国电信",
+        file: "assets/detail-telecom-blank.png",
+        theme: "#4a8fed",
+        themeDark: "#2d55c9",
+        panel: "#f2f6ff",
+        tipsPanel: "#eef4fc",
+        titlePatch: { x: 405, y: 0, w: 175, h: 88 },
+        titleX: 490,
+        colors: detailColors("#2f58d6", "#5ab8ff", "#ef1475", "#ff1c1c"),
+        defaults: {
+          cardName: "绘梦卡",
+          rentPrice: "39",
+          originalPrice: "原套餐39元",
+          flowAmount: "185G",
+          flowDesc: "155G通用+30G定向",
+          callAmount: "0.1元/分钟",
+          callDesc: "接收听免费",
+          benefitText: "优惠套餐\n官方套餐",
+          packageBefore: "原套餐：39元/月=5G通用流量+30G定向流量",
+          packageAfter: "优惠后：29元/月=155G通用流量+30G定向流量",
+          extraFee: "套餐外资费：流量超出:5元/G，短信超出:0.1元/条，通话超出:0.1元/分钟",
+          rechargeMain: "激活首充100元享受优惠",
+          rechargeSub: "不充值无法享受",
+          rules: "1、激活首充后自动到账15G通用流量,长期有效\n2、激活首充100元后，每月额外赠送135G通用流量，长期有效期\n3、激活强充100元，次月起联系店铺可领取50元话费，分5个月到账完毕，首免租第2-6个月月租29元，第7个月起恢复39元月租",
+          onlineSummary: "首月免费，套餐按天折算，次月起第2-6个月29元/享155G通用流量+30G定向流量，第7个月起39元155G通用流量+30G定向流量",
+          tipsTitle: "温馨提示",
+          tipsBody: "收货详细地址标准格式： X 省 / XX 市 / XX 区 / XX 街道门牌号\n地址包含：酒店、网吧、驿站、学校、学院、网咖、电竟、宾馆、超市、商店、便利店等（范围性）的关键词，尽量不带以上关键词，填定位得到的详细地址",
+          tipsStars: "快递方式：京东/顺丰/邮政/交付专员 上门激活"
+        }
+      },
+      broadnet: {
+        label: "中国广电",
+        file: "assets/detail-broadnet-blank.png",
+        theme: "#ef8b00",
+        themeDark: "#e27800",
+        panel: "#fff8f0",
+        tipsPanel: "#eef4fb",
+        titlePatch: { x: 405, y: 0, w: 175, h: 88 },
+        titleX: 490,
+        colors: detailColors("#e97d00", "#ffb35d", "#ef1475", "#ff1c1c"),
+        defaults: {
+          cardName: "龙芯卡",
+          rentPrice: "39",
+          originalPrice: "原套餐39元",
+          flowAmount: "230G",
+          flowDesc: "230G高速通用流量",
+          callAmount: "0.15元/分钟",
+          callDesc: "接收听免费",
+          benefitText: "优惠套餐\n本地归属",
+          packageBefore: "原套餐：39元/月=20G通用流量",
+          packageAfter: "优惠后：39元/月=230G通用流量",
+          extraFee: "套餐外资费：流量超出:5元/G，短信超出:0.1元/条，通话超出:0.15元/分钟",
+          rechargeMain: "激活首充两个100元享受优惠",
+          rechargeSub: "不充值无法享受",
+          rules: "1、首月赠送入网体验金,实现首月免月租\n2、激活快递处参加充值活动,充两个100元话费直接到账\n3、首充后添加40G通用流量(60个月),参加再充有礼，充值100元，每月获赠140G通用流量包(60个月)\n再充参与方式:用户须在快递小哥上门激活或者专属渠道完成首充有礼后，扫描快递小哥出示的复充有礼”活动二维码参与\n4、其他流量语音类优惠活动，请在广电APP领取",
+          onlineSummary: "首月免费，套餐内容按天折算，次月起39元/月230G通用流量，到期根据政策进行续约",
+          tipsTitle: "温馨提示",
+          tipsBody: "收货详细地址标准格式： X 省 / XX 市 / XX 区 / XX 街道门牌号\n地址包含：酒店、网吧、驿站、学校、学院、网咖、电竟、宾馆、超市、商店、便利店等（范围性）的关键词，尽量不带以上关键词，填定位得到的详细地址",
+          tipsStars: "快递方式：京东/顺丰/邮政/交付专员 上门激活"
+        }
+      },
+      mobile: {
+        label: "中国移动",
+        file: "assets/detail-mobile-blank.png",
+        theme: "#0c8873",
+        themeDark: "#086b5b",
+        panel: "#eaf6f3",
+        tipsPanel: "#eef4fb",
+        titlePatch: { x: 405, y: 0, w: 175, h: 88 },
+        titleX: 488,
+        colors: detailColors("#0b7f6d", "#35b79e", "#ef1475", "#ff1c1c"),
+        defaults: {
+          cardName: "山茶卡",
+          rentPrice: "39",
+          originalPrice: "原套餐69元",
+          flowAmount: "315G",
+          flowDesc: "165G通用+150G定向",
+          callAmount: "100分钟",
+          callDesc: "接收听免费",
+          benefitText: "优惠套餐\n官方套餐",
+          packageBefore: "原套餐：69元/月=15G全国通用+100分钟通话",
+          packageAfter: "优惠后：29元/月=160G通用流量+150G定向流量",
+          extraFee: "套餐外资费：流量超出:5元/G，短信超出0.1元/条，通话超出:0.19元/分钟",
+          rechargeMain: "激活首充100/200元享受优惠",
+          rechargeSub: "不充值无法享受",
+          rules: "1、激活首充后72小时叠加150G通用流量，有效期24个月，首两年优惠至0元/月,到期自动取消\n2、激活首充月租减免至39元每月(有效期两年)\n3、套餐外额外加享50G指定APP视频流量+100G咪咕定向流量,流量仅限当月使用，首两年优惠至0元/月\n4、激活首充后，第2-24个月每月需自主领取10元话费抵扣月租(领取后月底前到账)",
+          onlineSummary: "首月39按天折算，次月起2-24个月29元/月包享165G通用流量+150G定向流量+100分钟通话，到期根据政策进行续约\n注意：各地市流量有所差异具体以实际到手为准!",
+          tipsTitle: "温馨提示",
+          tipsBody: "收货详细地址标准格式： X 省 / XX 市 / XX 区 / XX 街道门牌号\n地址包含：酒店、网吧、驿站、学校、学院、网咖、电竟、宾馆、超市、商店、便利店等（范围性）的关键词，尽量不带以上关键词，填定位得到的详细地址",
+          tipsStars: "快递方式：京东/顺丰/邮政/交付专员 上门激活"
+        }
+      },
+      unicom: {
+        label: "中国联通",
+        file: "assets/detail-unicom-blank.png",
+        theme: "#c12b2a",
+        themeDark: "#a91f21",
+        panel: "#f8ecea",
+        tipsPanel: "#eef4fb",
+        titlePatch: { x: 250, y: 0, w: 160, h: 88 },
+        titleX: 320,
+        colors: detailColors("#af2324", "#d94c37", "#ef1475", "#ff1c1c"),
+        defaults: {
+          cardName: "良辰卡",
+          rentPrice: "39",
+          originalPrice: "原套餐59元",
+          flowAmount: "180G",
+          flowDesc: "180G高速通用流量",
+          callAmount: "200分钟",
+          callDesc: "接听免费",
+          benefitText: "优惠套餐\n官方套餐",
+          packageBefore: "原套餐：59元/月=180G通用流量+200分钟通话+联通云盘会员",
+          packageAfter: "优惠后：29元/月=180G通用流量+200分钟通话+联通云盘会员",
+          extraFee: "套餐外资费：流量超出:5元/G，短信超出:0.1元/条，通话超出:0.15元/分钟",
+          rechargeMain: "激活首充100元享受优惠",
+          rechargeSub: "不充值无法享受",
+          rules: "1、首月扣费规则：15号前激活优惠30元，流量通话按按天折到账15号后激活优惠次月到账，套餐按天折到账\n2、激活首充后，叠加20元优惠，仅可抵扣月租，有效期24个月，到期工作人员回访双方无异议可续约\n3、激活首充后，叠加10元优惠，仅可抵扣月租，有效期6个月，到期失效\n注意:该产品先激活后发货，每月末3天暂停激活审核，次月初恢复审核(云盘会员不可取消否则会导致无法叠加优惠)",
+          onlineSummary: "15号前激活优惠30元，流量通话按按天折到账，15号后激活优惠次月到账，套餐按天折到账，前6个月优惠30元，即月租29元享180通用流量+200分钟通话，之后月39元，到期工作人员回访双方无异议可续",
+          tipsTitle: "温馨提示",
+          tipsBody: "收货详细地址标准格式： X 省 / XX 市 / XX 区 / XX 街道门牌号\n地址包含：酒店、网吧、驿站、学校、学院、网咖、电竟、宾馆、超市、商店、便利店等（范围性）的关键词，尽量不带以上关键词，填定位得到的详细地址",
+          tipsStars: "快递方式：京东/顺丰/邮政/交付专员 上门激活"
+        }
+      }
+    };
+
+    const initialParams = new URLSearchParams(window.location.search);
+    let currentMode = initialParams.get("mode") === "detail" ? "detail" : "hero";
+    let currentOperator = operators.includes(initialParams.get("operator")) ? initialParams.get("operator") : "telecom";
+
+    source.onload = render;
+    source.onerror = render;
+
+    modeTabs.forEach((button) => {
+      button.addEventListener("click", () => {
+        currentMode = button.dataset.mode;
+        rebuildFields(true);
+        updateTemplate();
+      });
+    });
+
+    templateTabs.forEach((button) => {
+      button.addEventListener("click", () => {
+        currentOperator = button.dataset.template;
+        rebuildFields(true);
+        updateTemplate();
+      });
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      applyDefaults(getTemplate());
+      render();
+    });
+
+    downloadButton.addEventListener("click", async () => {
+      render();
+      downloadButton.disabled = true;
+      try {
+        const blob = await createCompressedBlob(canvas, getExportMaxBytes());
+        if (!blob) {
+          alert("图片生成失败，请刷新页面后重试，建议使用 http://127.0.0.1:5173/index.html 打开。");
+          return;
+        }
+        const tpl = getTemplate();
+        const modeName = currentMode === "detail" ? "详情图" : "头图";
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${tpl.label}${getValue("cardName") || "海报"}${getMonthlyPriceText()}${getFlowText()}${modeName}.${getBlobExtension(blob)}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(error);
+        alert("图片生成失败，请刷新页面后重试，建议使用 http://127.0.0.1:5173/index.html 打开。");
+      } finally {
+        downloadButton.disabled = false;
+      }
+    });
+
+    rebuildFields(true);
+    updateTemplate();
+
+    function detailColors(headerStart, headerEnd, accent, warning) {
+      return {
+        headerStart,
+        headerEnd,
+        accent,
+        warning,
+        white: "#ffffff",
+        black: "#111111",
+        muted: "#777777",
+        border: "#d8d8d8"
+      };
+    }
+
+    function getTemplate() {
+      return currentMode === "detail" ? detailTemplates[currentOperator] : heroTemplates[currentOperator];
+    }
+
+    function getFieldDefs() {
+      return currentMode === "detail" ? detailFields : heroFields;
+    }
+
+    function rebuildFields(resetValues) {
+      fieldsContainer.innerHTML = "";
+      getFieldDefs().forEach(([name, label, type]) => {
+        const wrapper = document.createElement("label");
+        wrapper.textContent = label;
+        const field = document.createElement(type === "textarea" ? "textarea" : "input");
+        field.dataset.field = name;
+        field.addEventListener("input", render);
+        wrapper.appendChild(field);
+        fieldsContainer.appendChild(wrapper);
+      });
+      if (resetValues) {
+        applyDefaults(getTemplate());
+      }
+    }
+
+    function applyDefaults(tpl) {
+      Array.from(fieldsContainer.querySelectorAll("[data-field]")).forEach((input) => {
+        input.value = tpl.defaults[input.dataset.field] || "";
+      });
+    }
+
+    function updateTemplate() {
+      const tpl = getTemplate();
+      document.documentElement.style.setProperty("--theme", tpl.theme);
+      document.documentElement.style.setProperty("--theme-dark", tpl.themeDark);
+      modeTabs.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.mode === currentMode);
+      });
+      templateTabs.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.template === currentOperator);
+      });
+
+      const width = 800;
+      const height = currentMode === "detail" ? 1800 : 800;
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      if (source.getAttribute("src") !== tpl.file) {
+        source.src = tpl.file;
+      } else {
+        render();
+      }
+    }
+
+    function getValue(name) {
+      const input = fieldsContainer.querySelector(`[data-field="${name}"]`);
+      return input ? input.value.trim() : "";
+    }
+
+    function getExportMaxBytes() {
+      return currentMode === "detail" ? detailExportMaxBytes : heroExportMaxBytes;
+    }
+
+    function getMonthlyPriceText() {
+      const value = currentMode === "detail" ? getValue("rentPrice") : getValue("price");
+      return value ? `${value}元` : "";
+    }
+
+    function getFlowText() {
+      const value = currentMode === "detail" ? getValue("flowAmount") : `${getValue("mainNumber")}${getValue("mainUnit")}`;
+      return value || "";
+    }
+
+    function getBlobExtension(blob) {
+      if (blob && blob.type === "image/png") {
+        return "png";
+      }
+      if (blob && blob.type === "image/webp") {
+        return "webp";
+      }
+      return "jpg";
+    }
+
+    function render() {
+      const tpl = getTemplate();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (source.complete && source.naturalWidth) {
+        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+      } else {
+        drawFallbackBase(tpl);
+      }
+
+      if (currentMode === "detail") {
+        renderDetail(tpl);
+      } else {
+        renderHero(tpl);
+      }
+    }
+
+    function font(weight, size, family = '"Microsoft YaHei", "PingFang SC", Arial, sans-serif') {
+      return `${weight} ${size}px ${family}`;
+    }
+
+    function roundedRect(x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function gradient(x1, y1, x2, y2, start, end) {
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad.addColorStop(0, start);
+      grad.addColorStop(1, end);
+      return grad;
+    }
+
+    function fillScaledText(text, x, y, maxWidth, options = {}) {
+      const safeText = text || "";
+      if (!safeText) {
+        return;
+      }
+      const {
+        align = "center",
+        baseline = "alphabetic",
+        fill = "#ffffff",
+        fontValue = font("800", 32),
+        shadow = null
+      } = options;
+
+      ctx.save();
+      ctx.font = fontValue;
+      ctx.textAlign = align;
+      ctx.textBaseline = baseline;
+      ctx.fillStyle = fill;
+      if (shadow) {
+        ctx.shadowColor = shadow.color;
+        ctx.shadowBlur = shadow.blur || 0;
+        ctx.shadowOffsetX = shadow.x || 0;
+        ctx.shadowOffsetY = shadow.y || 0;
+      }
+      const measured = Math.max(ctx.measureText(safeText).width, 1);
+      const scale = Math.min(1, maxWidth / measured);
+      ctx.translate(x, y);
+      ctx.scale(scale, 1);
+      ctx.fillText(safeText, 0, 0);
+      ctx.restore();
+    }
+
+    function drawFallbackBase(tpl) {
+      ctx.fillStyle = gradient(0, 0, canvas.width, canvas.height, tpl.themeDark, tpl.theme);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function renderHero(tpl) {
+      drawHeroTopTab(getValue("cardName"), tpl);
+      drawHeroMainPackage(getValue("mainNumber"), getValue("mainUnit"), getValue("flowLine"), tpl);
+      drawHeroFreeBadge(getValue("freeBadge"), tpl);
+      drawHeroVoiceBar(getValue("voiceLine"), tpl);
+      drawHeroAgeRibbon(getValue("ageLine"), tpl);
+      drawHeroBottomBand(getValue("bottomLine"), tpl);
+      drawHeroPriceCircle(getValue("price"), getValue("priceUnit"), getValue("priceBadge"), tpl);
+    }
+
+    function drawHeroTopTab(text, tpl) {
+      fillScaledText(text, 400, 86, 260, {
+        fontValue: font("900", 66, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.title,
+        shadow: { color: "rgba(29, 57, 146, 0.20)", blur: 5, y: 2 }
+      });
+    }
+
+    function drawHeroFreeBadge(text, tpl) {
+      fillScaledText(text, 588, 239, 118, {
+        fontValue: font("900", 25, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.badge
+      });
+    }
+
+    function drawHeroMainPackage(number, unit, flowLine, tpl) {
+      const num = number || "";
+      const suffix = unit || "";
+      if (num || suffix) {
+        ctx.save();
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = gradient(94, 244, 684, 398, tpl.colors.mainStart, tpl.colors.mainEnd);
+        ctx.shadowColor = tpl.colors.mainShadow;
+        ctx.shadowBlur = 7;
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 7;
+        ctx.font = font("900", 198, '"Arial Black", Impact, "Microsoft YaHei", sans-serif');
+        const numberWidth = ctx.measureText(num).width;
+        ctx.font = font("900", 148, '"Arial Black", Impact, "Microsoft YaHei", sans-serif');
+        const unitWidth = ctx.measureText(suffix).width;
+        const gap = suffix ? 18 : 0;
+        const total = numberWidth + gap + unitWidth;
+        const scale = Math.min(1, 680 / Math.max(total, 1));
+        ctx.translate(400 - (total * scale) / 2, 392);
+        ctx.scale(scale, 1);
+        ctx.font = font("900", 198, '"Arial Black", Impact, "Microsoft YaHei", sans-serif');
+        ctx.fillText(num, 0, 0);
+        ctx.font = font("900", 148, '"Arial Black", Impact, "Microsoft YaHei", sans-serif');
+        ctx.fillText(suffix, numberWidth + gap, -6);
+        ctx.restore();
+      }
+
+      fillScaledText(flowLine, 400, 440, 470, {
+        fontValue: font("900", 31, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.flow
+      });
+    }
+
+    function drawHeroVoiceBar(text, tpl) {
+      fillScaledText(text, 400, 514, 430, {
+        fontValue: font("900", 42, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.voice
+      });
+    }
+
+    function drawHeroAgeRibbon(text, tpl) {
+      fillScaledText(text, 42, 662, 390, {
+        align: "left",
+        fontValue: font("800", 32, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.age,
+        shadow: { color: "rgba(88, 64, 28, 0.20)", blur: 3, y: 2 }
+      });
+    }
+
+    function drawHeroBottomBand(text, tpl) {
+      fillScaledText(text, 14, 754, 555, {
+        align: "left",
+        fontValue: font("900", 48, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.bottom,
+        shadow: { color: "rgba(84, 45, 16, 0.16)", blur: 3, y: 2 }
+      });
+    }
+
+    function drawHeroPriceCircle(price, unit, badge, tpl) {
+      const hasPriceText = Boolean((price || "").trim() || (unit || "").trim());
+      if (hasPriceText) {
+        ctx.save();
+        ctx.fillStyle = tpl.colors.price;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.shadowColor = "rgba(34, 51, 40, 0.26)";
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 5;
+        ctx.font = font("500", 28, "Arial, sans-serif");
+        ctx.fillText("¥", 602, 647);
+        ctx.font = font("900", 96, '"Arial Black", Impact, sans-serif');
+        const priceText = price || "";
+        const priceWidth = Math.max(ctx.measureText(priceText).width, 1);
+        const priceScale = Math.min(1, 112 / priceWidth);
+        ctx.save();
+        ctx.translate(626, 709);
+        ctx.scale(priceScale, 1);
+        ctx.fillText(priceText, 0, 0);
+        ctx.restore();
+        ctx.font = font("700", 32, '"Microsoft YaHei", Arial, sans-serif');
+        ctx.fillText(unit || "", 735, 709);
+        ctx.restore();
+      }
+
+      fillScaledText(badge, 679, 762, 102, {
+        fontValue: font("900", 21, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.priceBadge
+      });
+    }
+
+    function renderDetail(tpl) {
+      coverDetailEditableAreas(tpl);
+      drawDetailTitle(getValue("cardName"), tpl);
+      drawDetailSummary(tpl);
+      drawDetailFeeIntro(tpl);
+      drawDetailRecharge(tpl);
+      drawDetailRules(tpl);
+      drawDetailOnline(tpl);
+      drawDetailTips(tpl);
+    }
+
+    function coverDetailEditableAreas(tpl) {
+      drawDetailMainContentShell(tpl);
+
+      ctx.fillStyle = tpl.tipsPanel;
+      roundedRect(64, 1096, 672, 294, 28);
+      ctx.fill();
+    }
+
+    function drawDetailSummaryShell(tpl) {
+      ctx.save();
+      roundedRect(89, 178, 622, 186, 20);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "#d7d7d7";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.clip();
+
+      ctx.fillStyle = gradient(89, 178, 711, 244, tpl.colors.headerEnd, tpl.themeDark);
+      ctx.fillRect(89, 178, 622, 66);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = font("400", 34, '"Microsoft YaHei", "SimHei", Arial, sans-serif');
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      [["月租", 168], ["流量", 323], ["通话", 476], ["优惠", 632]].forEach(([text, x]) => {
+        ctx.fillText(text, x, 215);
+      });
+
+      ctx.strokeStyle = "#dddddd";
+      ctx.lineWidth = 2;
+      [247, 400, 552].forEach((x) => {
+        ctx.beginPath();
+        ctx.moveTo(x, 178);
+        ctx.lineTo(x, 364);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function drawDetailMainContentShell(tpl) {
+      ctx.save();
+      ctx.fillStyle = tpl.panel;
+      roundedRect(64, 154, 672, 920, 28);
+      ctx.fill();
+
+      drawDetailSummaryShell(tpl);
+
+      ctx.fillStyle = tpl.panel;
+      ctx.fillRect(91, 455, 618, 106);
+      roundedRect(91, 635, 618, 250, 16);
+      ctx.fill();
+      roundedRect(91, 925, 618, 126, 16);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(0,0,0,0.32)";
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(92, 900);
+      ctx.lineTo(708, 900);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = tpl.theme;
+      ctx.beginPath();
+      ctx.arc(64, 900, 17, -Math.PI / 2, Math.PI / 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(736, 900, 17, Math.PI / 2, Math.PI * 1.5);
+      ctx.fill();
+
+      roundedRect(64, 154, 672, 920, 28);
+      ctx.strokeStyle = colorWithAlpha(tpl.themeDark, 0.62);
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawDetailTitle(text, tpl) {
+      fillScaledText(text, tpl.titleX, 55, 145, {
+        fontValue: font("900", 40, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: "#ffffff"
+      });
+    }
+
+    function smoothstep(value) {
+      const x = Math.min(1, Math.max(0, value));
+      return x * x * (3 - 2 * x);
+    }
+
+    function drawDetailSummary(tpl) {
+      const c = tpl.colors;
+      drawPriceValue(getValue("rentPrice"), 108, 304, c.accent);
+      ctx.fillStyle = "#000000";
+      ctx.font = font("700", 22, '"Microsoft YaHei", Arial, sans-serif');
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("元/月", 180, 302);
+      const originalText = `(${getValue("originalPrice")})`;
+      fillScaledText(originalText, 108, 330, 120, {
+        align: "left",
+        fontValue: font("400", 18),
+        fill: "#777777"
+      });
+      drawStrikeLine(originalText, 108, 323, 120, font("400", 18), "#777777");
+
+      fillScaledText(getValue("flowAmount"), 323, 306, 135, {
+        fontValue: font("900", 52, '"Arial Black", Impact, "Microsoft YaHei", sans-serif'),
+        fill: c.accent
+      });
+      fillScaledText(getValue("flowDesc"), 323, 334, 128, {
+        fontValue: font("500", 14),
+        fill: "#111111"
+      });
+
+      fillScaledText(getValue("callAmount"), 476, 302, 132, {
+        fontValue: font("900", 30, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: c.accent
+      });
+      fillScaledText(getValue("callDesc"), 476, 334, 118, {
+        fontValue: font("500", 14),
+        fill: "#111111"
+      });
+
+      drawMultilineCentered(getValue("benefitText"), 632, 295, 130, 30, {
+        fontValue: font("800", 24, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: c.accent
+      });
+    }
+
+    function drawPriceValue(value, x, y, fill) {
+      fillScaledText(value, x, y, 68, {
+        align: "left",
+        fontValue: font("900", 54, '"Arial Black", Impact, "Microsoft YaHei", sans-serif'),
+        fill
+      });
+    }
+
+    function drawStrikeLine(text, x, y, maxWidth, fontValue, color) {
+      const safeText = text || "";
+      if (!safeText) {
+        return;
+      }
+      ctx.save();
+      ctx.font = fontValue;
+      const width = Math.min(ctx.measureText(safeText).width, maxWidth);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + width, y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawMultilineCentered(text, x, y, maxWidth, lineHeight, options) {
+      const lines = (text || "").split(/\n+/).filter(Boolean);
+      lines.forEach((line, index) => {
+        fillScaledText(line, x, y + index * lineHeight, maxWidth, options);
+      });
+    }
+
+    function drawDetailFeeIntro(tpl) {
+      const c = tpl.colors;
+      drawDetailTag("资费介绍", 91, 395, 156, 52, tpl);
+      drawPlainLine(getValue("packageBefore"), 92, 475, 610, 20, "#111111", "500");
+      drawPlainLine(getValue("packageAfter"), 92, 512, 610, 20, "#111111", "500");
+      drawPlainLine(getValue("extraFee"), 92, 549, 610, 18, "#111111", "500");
+      ctx.fillStyle = c.warning;
+    }
+
+    function drawDetailRecharge(tpl) {
+      ctx.save();
+      roundedRect(91, 570, 590, 50, 8);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.fillStyle = gradient(91, 570, 501, 620, "#ffbd53", "#ff6f3e");
+      roundedRect(91, 570, 413, 50, 8);
+      ctx.fill();
+      ctx.strokeStyle = "#ffb08d";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+
+      fillScaledText(getValue("rechargeMain"), 295, 606, 385, {
+        fontValue: font("900", 31, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: "#ffffff"
+      });
+      fillScaledText(getValue("rechargeSub"), 594, 604, 168, {
+        fontValue: font("800", 23, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: "#ff6f3e"
+      });
+    }
+
+    function drawDetailRules(tpl) {
+      drawWrappedParagraphs(getValue("rules"), 92, 649, 620, {
+        fontValue: font("800", 18, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        lineHeight: 31,
+        paragraphGap: 8,
+        fill: "#111111",
+        highlight: tpl.colors.warning,
+        maxLines: 8
+      });
+    }
+
+    function drawDetailOnline(tpl) {
+      fillScaledText("综上所述：", 92, 960, 150, {
+        align: "left",
+        fontValue: font("900", 32, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: tpl.colors.warning
+      });
+      drawIndentedParagraphs(getValue("onlineSummary"), 248, 92, 960, 470, 620, {
+        fontValue: font("800", 18, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        lineHeight: 31,
+        paragraphGap: 4,
+        fill: "#111111",
+        highlight: tpl.colors.warning,
+        maxLines: 4
+      });
+    }
+
+    function drawDetailTips(tpl) {
+      drawDetailTag(getValue("tipsTitle") || "温馨提示", 91, 1115, 156, 52, tpl);
+      drawWrappedParagraphs(getValue("tipsBody"), 92, 1195, 616, {
+        fontValue: font("800", 18, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        lineHeight: 35,
+        paragraphGap: 0,
+        fill: "#111111",
+        highlight: tpl.colors.warning,
+        maxLines: 4
+      });
+      drawStarLines(getValue("tipsStars"), 92, 1316, 620, tpl);
+    }
+
+    function drawDetailTag(text, x, y, width, height, tpl) {
+      ctx.save();
+      roundedRect(x, y, width, height, 8);
+      ctx.fillStyle = gradient(x, y, x + width, y + height, tpl.colors.headerEnd, tpl.themeDark);
+      ctx.fill();
+      ctx.restore();
+      fillScaledText(text, x + width / 2, y + 37, width - 16, {
+        fontValue: font("900", 31, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill: "#ffffff"
+      });
+    }
+
+    function drawPlainLine(text, x, y, maxWidth, size, fill, weight = "600") {
+      fillScaledText(text, x, y, maxWidth, {
+        align: "left",
+        fontValue: font(weight, size, '"Microsoft YaHei", "SimHei", Arial, sans-serif'),
+        fill
+      });
+    }
+
+    function drawWrappedParagraphs(text, x, y, maxWidth, options) {
+      const paragraphs = (text || "").split(/\n+/).filter(Boolean);
+      let cursorY = y;
+      let linesDrawn = 0;
+      for (const paragraph of paragraphs) {
+        const wrapped = wrapText(paragraph, maxWidth, options.fontValue);
+        for (const line of wrapped) {
+          if (options.maxLines && linesDrawn >= options.maxLines) {
+            return;
+          }
+          drawRichLine(line, x, cursorY, maxWidth, options);
+          cursorY += options.lineHeight;
+          linesDrawn += 1;
+        }
+        cursorY += options.paragraphGap || 0;
+      }
+    }
+
+    function drawIndentedParagraphs(text, firstX, nextX, y, firstMaxWidth, nextMaxWidth, options) {
+      const paragraphs = (text || "").split(/\n+/).filter(Boolean);
+      let cursorY = y;
+      let linesDrawn = 0;
+      let isFirstLine = true;
+
+      for (const paragraph of paragraphs) {
+        let remaining = paragraph;
+        while (remaining) {
+          if (options.maxLines && linesDrawn >= options.maxLines) {
+            return;
+          }
+          const x = isFirstLine ? firstX : nextX;
+          const maxWidth = isFirstLine ? firstMaxWidth : nextMaxWidth;
+          const line = takeFittingLine(remaining, maxWidth, options.fontValue);
+          drawRichLine(line, x, cursorY, maxWidth, options);
+          remaining = remaining.slice(line.length);
+          cursorY += options.lineHeight;
+          linesDrawn += 1;
+          isFirstLine = false;
+        }
+        cursorY += options.paragraphGap || 0;
+      }
+    }
+
+    function takeFittingLine(text, maxWidth, fontValue) {
+      ctx.save();
+      ctx.font = fontValue;
+      let line = "";
+      for (const char of text) {
+        const test = line + char;
+        if (line && ctx.measureText(test).width > maxWidth) {
+          ctx.restore();
+          return line;
+        }
+        line = test;
+      }
+      ctx.restore();
+      return line;
+    }
+
+    function wrapText(text, maxWidth, fontValue) {
+      ctx.save();
+      ctx.font = fontValue;
+      const lines = [];
+      let line = "";
+      for (const char of text) {
+        const test = line + char;
+        if (line && ctx.measureText(test).width > maxWidth) {
+          lines.push(line);
+          line = char;
+        } else {
+          line = test;
+        }
+      }
+      if (line) {
+        lines.push(line);
+      }
+      ctx.restore();
+      return lines;
+    }
+
+    function drawRichLine(line, x, y, maxWidth, options) {
+      const tokens = splitHighlightTokens(line);
+      ctx.save();
+      ctx.font = options.fontValue;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      let cursorX = x;
+      tokens.forEach((token) => {
+        ctx.fillStyle = token.highlight ? options.highlight : options.fill;
+        ctx.fillText(token.text, cursorX, y);
+        cursorX += ctx.measureText(token.text).width;
+      });
+      ctx.restore();
+    }
+
+    function splitHighlightTokens(line) {
+      const pattern = /(\d+(?:\.\d+)?(?:G|元|分钟|个月|天|号|年|月)|\d+\/\d+元|\d+-\d+个月|优惠\d+元|29元\/月|39元\/月)/g;
+      const tokens = [];
+      let lastIndex = 0;
+      let match;
+      while ((match = pattern.exec(line)) !== null) {
+        if (match.index > lastIndex) {
+          tokens.push({ text: line.slice(lastIndex, match.index), highlight: false });
+        }
+        tokens.push({ text: match[0], highlight: true });
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex < line.length) {
+        tokens.push({ text: line.slice(lastIndex), highlight: false });
+      }
+      return tokens;
+    }
+
+    function colorWithAlpha(hex, alpha) {
+      const clean = hex.replace("#", "");
+      const value = parseInt(clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean, 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function drawStarLines(text, x, y, maxWidth, tpl) {
+      const lines = (text || "").split(/\n+/).filter(Boolean);
+      lines.forEach((line, index) => {
+        ctx.save();
+        ctx.font = font("600", 17, '"Microsoft YaHei", "SimHei", Arial, sans-serif');
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = tpl.colors.warning;
+        ctx.fillText("★", x, y + index * 31);
+        ctx.fillStyle = "#111111";
+        const wrapped = wrapText(line, maxWidth - 22, ctx.font);
+        if (wrapped[0]) {
+          ctx.fillText(wrapped[0], x + 20, y + index * 31);
+        }
+        ctx.restore();
+      });
+    }
+
+    function toBlob(targetCanvas, type, quality) {
+      return new Promise((resolve) => {
+        targetCanvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+            return;
+          }
+          try {
+            resolve(dataUrlToBlob(targetCanvas.toDataURL(type, quality)));
+          } catch (error) {
+            console.error(error);
+            resolve(null);
+          }
+        }, type, quality);
+      });
+    }
+
+    function dataUrlToBlob(dataUrl) {
+      const [header, data] = dataUrl.split(",");
+      const mime = (header.match(/data:([^;]+)/) || [])[1] || "image/jpeg";
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: mime });
+    }
+
+    async function createCompressedBlob(targetCanvas, maxBytes) {
+      const png = await toBlob(targetCanvas, "image/png");
+      if (png && png.size <= maxBytes) {
+        return png;
+      }
+
+      const webp = await createQualityCompressedBlob(targetCanvas, maxBytes, "image/webp");
+      if (webp) {
+        return webp;
+      }
+
+      return createQualityCompressedBlob(targetCanvas, maxBytes, "image/jpeg");
+    }
+
+    async function createQualityCompressedBlob(targetCanvas, maxBytes, type) {
+      let best = null;
+      let low = 0.05;
+      let high = 1;
+      const maximum = await toBlob(targetCanvas, type, 1);
+      if (!maximum) {
+        return null;
+      }
+      if (type === "image/webp" && maximum.type !== "image/webp") {
+        return null;
+      }
+      if (maximum.size <= maxBytes) {
+        return maximum;
+      }
+
+      for (let i = 0; i < 12; i += 1) {
+        const quality = (low + high) / 2;
+        const blob = await toBlob(targetCanvas, type, quality);
+        if (!blob) {
+          return null;
+        }
+        if (type === "image/webp" && blob.type !== "image/webp") {
+          return null;
+        }
+        if (blob.size <= maxBytes) {
+          best = blob;
+          low = quality;
+        } else {
+          high = quality;
+        }
+      }
+
+      if (best) {
+        return best;
+      }
+
+      const smallest = await toBlob(targetCanvas, type, 0.05);
+      if (type === "image/webp" && smallest && smallest.type !== "image/webp") {
+        return null;
+      }
+      return smallest && smallest.size <= maxBytes ? smallest : createScaledCompressedBlob(targetCanvas, maxBytes);
+    }
+
+    async function createScaledCompressedBlob(targetCanvas, maxBytes) {
+      const tempCanvas = document.createElement("canvas");
+      const tempCtx = tempCanvas.getContext("2d");
+      for (let scale = 0.95; scale >= 0.55; scale -= 0.05) {
+        tempCanvas.width = Math.round(targetCanvas.width * scale);
+        tempCanvas.height = Math.round(targetCanvas.height * scale);
+        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(targetCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+        const blob = await toBlob(tempCanvas, "image/jpeg", 0.7);
+        if (blob && blob.size <= maxBytes) {
+          return blob;
+        }
+      }
+      return toBlob(tempCanvas, "image/jpeg", 0.35);
+    }
+  </script>
+</body>
+</html>
