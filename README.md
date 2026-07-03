@@ -147,6 +147,20 @@ assets/detail-broadnet-blank.png
 - 导出图片大小限制是为了适配常见平台上传要求，若需要更高清图片，可以在代码中调整 `heroExportMaxBytes` 和 `detailExportMaxBytes`。
 - 开源前请确认模板图片、LOGO、文案和品牌素材的授权范围。
 
+
+## 成品预览
+<img width="800" height="800" alt="中国联通小重卡19元200GB头图 (1)" src="https://github.com/user-attachments/assets/748026a5-be89-45ac-90ab-20ab8f00f1af" />
+<img width="800" height="1800" alt="重庆联通19元200G+300分钟2" src="https://github.com/user-attachments/assets/b21a28eb-89d8-4bad-b294-53ab82306934" />
+<img width="800" height="800" alt="广电飞龙卡29元192G" src="https://github.com/user-attachments/assets/8d197cee-08ca-408d-ac28-22da6fa93713" />
+<img width="800" height="1800" alt="广电飞龙卡29元192G2" src="https://github.com/user-attachments/assets/7673d691-46de-446f-885f-3ef1926bb67a" />
+<img width="800" height="800" alt="广东移动39元235G" src="https://github.com/user-attachments/assets/9db14f93-1061-4baf-8f88-a70b66675cd1" />
+<img width="800" height="1800" alt="广东移动39元235G2" src="https://github.com/user-attachments/assets/75291ee4-ad9a-4edd-ba50-24b7acc9d193" />
+<img width="800" height="800" alt="广东电信39元235G+100分钟" src="https://github.com/user-attachments/assets/e2dc80cd-df3b-48c7-9dff-6ca2b2ea1870" />
+<img width="800" height="1800" alt="广东电信39元235G+100分钟2" src="https://github.com/user-attachments/assets/e964d38f-5ddc-475b-b616-351580762a92" />
+
+
+
+
 ## 开源说明
 
 本项目适合作为运营商海报模板制作工具的前端示例。你可以根据自己的业务场景继续扩展：
